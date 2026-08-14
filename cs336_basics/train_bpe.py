@@ -15,6 +15,7 @@ Core data structures (inside train_bpe):
 """
 
 import os
+import pickle
 from collections import Counter, defaultdict
 from itertools import pairwise
 from multiprocessing import Pool
@@ -155,6 +156,21 @@ def merge_pairs(pair, new_id, token_word_freq, pairs_to_token_words, pair_counts
     return token_word_freq, pairs_to_token_words, pair_counts
 
 
+def save_tokenizer(vocab, merges, path_prefix):
+    with open(f"{path_prefix}.vocab.pkl", "wb") as f:
+        pickle.dump(vocab, f)
+    with open(f"{path_prefix}.merges.pkl", "wb") as f:
+        pickle.dump(merges, f)
+
+
+def load_tokenizer(path_prefix):
+    with open(f"{path_prefix}.vocab.pkl", "rb") as f:
+        vocab = pickle.load(f)
+    with open(f"{path_prefix}.merges.pkl", "rb") as f:
+        merges = pickle.load(f)
+    return vocab, merges
+
+
 def train_bpe(
     input_path: str | os.PathLike, vocab_size: int, special_tokens: list[str], **kwargs
 ) -> tuple[dict[int, bytes], list[tuple[bytes, bytes]]]:
@@ -211,7 +227,12 @@ def train_bpe(
 
 if __name__ == "__main__":
     # Guard is required: multiprocessing workers re-import this module.
-    tiny_stories = "data/TinyStoriesV2-GPT4-train.txt"
-
     special_tokens = ["<|endoftext|>"]
-    vocab, merges = train_bpe(tiny_stories, 280, special_tokens)
+
+    # tiny_stories = "data/TinyStoriesV2-GPT4-train.txt"
+    # vocab, merges = train_bpe(tiny_stories, 10000, special_tokens)
+    # save_tokenizer(vocab, merges, "out/tinystories_10k")
+
+    owt = "data/owt_train.txt"
+    vocab, merges = train_bpe(owt, 32000, special_tokens)
+    save_tokenizer(vocab, merges, "out/owt_32k")
